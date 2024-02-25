@@ -8,32 +8,36 @@ import {
 } from './books.service';
 import { BookModel } from './books.model';
 import { api } from '@opentelemetry/sdk-node';
-import { span } from '../../span';
+import { setupTracing } from '../../tracer';
 
+
+const tracer = setupTracing('test-service');
 // Create book controller
 export async function createBookController(req: Request, res: Response) {
-   api.context.with(api.trace.setSpan(api.context.active(), span), async () => {
-      try {
-         const newBook = await createBook(req.body);
-         res.status(201).json({
-            message: 'Book created successfully',
-            book: newBook,
-         });
-         span.setStatus({ code: api.SpanStatusCode.OK });
-      } catch (error) {
-         res.status(500).json({
-            error: 'Failed to create the book.',
-            message: error.message,
-         });
-         span.setStatus({
-            code: api.SpanStatusCode.ERROR,
-            message: error.message,
-         });
-      } finally {
-         span.end();
-      }
+   const span = tracer.startSpan('book-creation', {
+      kind: api.SpanKind.CLIENT,
    });
+   try {
+      const newBook = await createBook(req.body);
+      res.status(201).json({
+         message: 'Book created successfully',
+         book: newBook,
+      });
+      span.setStatus({ code: api.SpanStatusCode.OK });
+   } catch (error) {
+      res.status(500).json({
+         error: 'Failed to create the book.',
+         message: error.message,
+      });
+      span.setStatus({
+         code: api.SpanStatusCode.ERROR,
+         message: error.message,
+      });
+   } finally {
+      span.end();
+   }
 }
+
 
 // Get books controller
 export async function getBooksController(req: Request, res: Response) {

@@ -10,8 +10,15 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
-import opentelemetry from '@opentelemetry/api';
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+// import opentelemetry from '@opentelemetry/api';
+import {
+   diag,
+   DiagConsoleLogger,
+   DiagLogLevel,
+   trace,
+} from '@opentelemetry/api';
+
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
 export const setupTracing = (serviceName: string) => {
    const provider = new NodeTracerProvider({
@@ -20,15 +27,16 @@ export const setupTracing = (serviceName: string) => {
       }),
    });
 
+   provider.register();
+
    const exporter = new OTLPTraceExporter({
       url: 'http://localhost:4318/v1/traces',
    });
 
    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
 
-   provider.register();
-
    registerInstrumentations({
+      tracerProvider: provider,
       instrumentations: [
          new ExpressInstrumentation(),
          new HttpInstrumentation(),
@@ -36,11 +44,11 @@ export const setupTracing = (serviceName: string) => {
       ],
    });
 
-   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
-   
    console.log('Tracing initialized');
-   
-   return opentelemetry.trace.getTracer(serviceName);
+  
+   return trace.getTracer(serviceName);
 };
+
+
 
 // trace.getTracer('test').startSpan('test span').end();
