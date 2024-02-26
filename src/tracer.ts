@@ -2,7 +2,10 @@
 
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 // import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import {
+   BatchSpanProcessor,
+   BasicTracerProvider,
+} from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
@@ -17,6 +20,7 @@ import {
    DiagLogLevel,
    trace,
 } from '@opentelemetry/api';
+import opentelemetry from '@opentelemetry/api';
 
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
@@ -45,10 +49,8 @@ export const setupTracing = (serviceName: string) => {
    });
 
    console.log('Tracing initialized');
-  
-   return trace.getTracer(serviceName);
+
+   return opentelemetry.trace.getTracer(serviceName);
 };
-
-
 
 // trace.getTracer('test').startSpan('test span').end();

@@ -1,14 +1,18 @@
 import { api } from '@opentelemetry/sdk-node';
 import { IBook } from './books.interfaces';
 import { BookModel } from './books.model';
+import { tracer } from '../../span';
+import opentelemetry from '@opentelemetry/api';
+
 /* -------------------------------------------------------------------------- */
 /*                            Create a Book service                           */
 /* -------------------------------------------------------------------------- */
-export async function createBook(book: IBook) {
-   const tracer = api.trace.getTracer('book-creation');
-   const dbSpan = tracer.startSpan('db-operation', {
-      kind: api.SpanKind.INTERNAL,
-   });
+export async function createBook(book: IBook, parent: any) {
+   const ctx = opentelemetry.trace.setSpan(
+      opentelemetry.context.active(),
+      parent,
+   );
+   const dbSpan = tracer.startSpan('db-operation', undefined, ctx);
    try {
       const bookEntry = await BookModel.create(book);
       dbSpan.setStatus({ code: api.SpanStatusCode.OK });
@@ -23,7 +27,6 @@ export async function createBook(book: IBook) {
       dbSpan.end();
    }
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                             Get Books service                             */
